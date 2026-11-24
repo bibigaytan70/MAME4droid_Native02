@@ -1,63 +1,41 @@
-name: Compilar mame-native 0.139u1 (.so)
+name: Compilar MAME4droid Native (.so)
 
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build-native:
-    runs-on: ubuntu-22.04
+  build:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Descargar código fuente
         uses: actions/checkout@v4
 
-      - name: Instalar dependencias de compilación
+      - name: Instalar dependencias de compilación en Ubuntu
         run: |
-          sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386 zlib1g-dev libtinfo5
+          sudo apt-get install -y build-essential libsdl1.2-dev libexpat1-dev zlib1g-dev
 
-      - name: Instalar Android NDK r17c
-        id: setup-ndk
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r17c
-
-      - name: Crear toolchains de Linux (ARM y ARM64)
+      - name: Descargar e instalar Android NDK r16b
         run: |
-          NDK_PATH="${{ steps.setup-ndk.outputs.ndk-path }}"
-          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm --api 18 --install-dir $PWD/toolchain-arm
-          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm64 --api 21 --install-dir $PWD/toolchain-arm64
+          wget -q https://google.com
+          unzip -q android-ndk-r16b-linux-x86_64.zip
+          echo "NDK_ROOT=$PWD/android-ndk-r16b" >> $GITHUB_ENV
+          echo "$PWD/android-ndk-r16b" >> $GITHUB_PATH
 
-      - name: Compilar herramientas auxiliares nativas (prec-build)
+      - name: Compilar herramientas host (m68kmake, etc.)
         run: |
           mkdir -p prec-build
-          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
-          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
-          ls -la prec-build/
+          make TARGET=mame OSD=sdl buildtools -j$(nproc) || true
+          cp -f obj/sdl/mame/build/* prec-build/ 2>/dev/null || cp -f obj/droid-ios/mame/build/* prec-build/ 2>/dev/null || true
 
-      - name: Compilar mame-native a .so (ARMv7 y ARM64)
+      - name: Compilar MAME4droid para Android (.so)
         run: |
-          # Compilar para 32-bit (armeabi-v7a)
-          make -j$(nproc) TARGET=mame OSD=droid-ios \
-            CC="@$PWD/toolchain-arm/bin/arm-linux-androideabi-clang" \
-            LD="@$PWD/toolchain-arm/bin/arm-linux-androideabi-clang++" \
-            AR="@$PWD/toolchain-arm/bin/arm-linux-androideabi-ar"
+          make -j$(nproc)
 
-          # Limpiar objetos intermedios antes de compilar 64-bit
-          make clean TARGET=mame OSD=droid-ios
-
-          # Compilar para 64-bit (arm64-v8a)
-          make -j$(nproc) TARGET=mame OSD=droid-ios PTR64=1 \
-            CC="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang" \
-            LD="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang++" \
-            AR="@$PWD/toolchain-arm64/bin/aarch64-linux-android-ar"
-
-      - name: Subir librerías .so compiladas
+      - name: Empaquetar y subir archivos .so
         uses: actions/upload-artifact@v4
         with:
-          name: mame-native-so
+          name: librerias-mame4droid-so
           path: |
             **/*.so
