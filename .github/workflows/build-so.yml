@@ -17,7 +17,8 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386
+          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386 libtinfo5
+
 
       - name: Instalar Android NDK r17c
         id: setup-ndk
