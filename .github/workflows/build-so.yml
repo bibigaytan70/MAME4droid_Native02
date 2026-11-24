@@ -1,6 +1,7 @@
 name: Compilar MAME4droid Native (.so)
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
@@ -18,8 +19,9 @@ jobs:
 
       - name: Descargar e instalar Android NDK r16b
         run: |
-          wget -q https://google.com
-          unzip -q android-ndk-r16b-linux-x86_64.zip
+          wget -O ndk.zip https://google.com
+          unzip -q ndk.zip
+          rm ndk.zip
           echo "NDK_ROOT=$PWD/android-ndk-r16b" >> $GITHUB_ENV
           echo "$PWD/android-ndk-r16b" >> $GITHUB_PATH
 
@@ -28,7 +30,6 @@ jobs:
           mkdir -p prec-build
           gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
-          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c src/lib/util/osdcore.c src/osd/osdmini/minimain.c -lz -lm -o prec-build/png2bdc || true
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo || true
           ls -la prec-build
 
