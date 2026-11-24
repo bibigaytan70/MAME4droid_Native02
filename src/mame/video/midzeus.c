@@ -257,19 +257,7 @@ VIDEO_START(midzeus)
     state->zeus_renderbase = state->waveram[1];
 
     /* Registro de estados (Save States) */
-    state_save_register_global_array(machine, state->zeus_fifo);
-    state_save_register_global(machine, state->zeus_fifo_words);
-    state_save_register_global_2d_array(machine, state->zeus_matrix);
-    state_save_register_global_array(machine, state->zeus_point);
-    state_save_register_global_array(machine, state->zeus_light);
-    state_save_register_global(machine, state->zeus_palbase);
-    state_save_register_global(machine, state->zeus_objdata);
-    state_save_register_global(machine, state->zeus_cliprect.min_x);
-    state_save_register_global(machine, state->zeus_cliprect.max_x);
-    state_save_register_global(machine, state->zeus_cliprect.min_y);
-    state_save_register_global(machine, state->zeus_cliprect.max_y);
-    state_save_register_global_pointer(machine, state->waveram[0], WAVERAM0_WIDTH * WAVERAM0_HEIGHT * 2);
-    state_save_register_global_pointer(machine, state->waveram[1], WAVERAM1_WIDTH * WAVERAM1_HEIGHT * 2);
+   
 
     /* HACK para revisión temprana de MK4 */
     state->is_mk4b = (strcmp(machine->gamedrv->name, "mk4b") == 0);
