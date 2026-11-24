@@ -7,7 +7,8 @@
 **************************************************************************/
 
 #include "emu.h"
-#include "midzeus.h"
+#include "includes/midzeus.h"
+
 #include "video/poly.h"
 
 #include <stdlib.h>
