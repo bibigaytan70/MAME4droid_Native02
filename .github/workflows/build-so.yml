@@ -17,13 +17,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential zlib1g-dev
 
-      - name: Descargar e instalar Android NDK r16b
-        run: |
-          wget -O ndk.zip https://google.com
-          unzip -q ndk.zip
-          rm ndk.zip
-          echo "NDK_ROOT=$PWD/android-ndk-r16b" >> $GITHUB_ENV
-          echo "$PWD/android-ndk-r16b" >> $GITHUB_PATH
+      - name: Instalar Android NDK r16b
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r16b
+          add-to-path: true
 
       - name: Compilar herramientas host en prec-build
         run: |
