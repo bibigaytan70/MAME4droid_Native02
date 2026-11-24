@@ -19,7 +19,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386 libtinfo5
 
-
       - name: Instalar Android NDK r17c
         id: setup-ndk
         uses: nttld/setup-ndk@v1
@@ -32,15 +31,12 @@ jobs:
           python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm --api 16 --install-dir $PWD/toolchain-arm
           python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm64 --api 21 --install-dir $PWD/toolchain-arm64
 
-    
-       - name: Compilar herramientas auxiliares nativas (prec-build)
+      - name: Compilar herramientas auxiliares nativas (prec-build)
         run: |
           mkdir -p prec-build
-          # Compilamos las herramientas build de MAME usando el gcc nativo de Linux
           make -j$(nproc) TARGET=mame OSD=sdl NOWERROR=1 \
             CC="@gcc" LD="@g++" AR="@ar" \
             obj/sdl/mame/build/file2str obj/sdl/mame/build/png2bdc obj/sdl/mame/build/verinfo || true
-          # Si la carpeta de salida tiene otro nombre (ej. obj/linux o similar), copiamos cualquier ejecutable generado
           find obj -type f -executable -exec cp {} prec-build/ \;
           ls -la prec-build/
 
@@ -60,7 +56,6 @@ jobs:
             CC="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang" \
             LD="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang++" \
             AR="@$PWD/toolchain-arm64/bin/aarch64-linux-android-ar"
-
 
       - name: Subir librerías .so compiladas
         uses: actions/upload-artifact@v4
