@@ -17,7 +17,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386 libtinfo5
+          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386 zlib1g-dev libtinfo5
 
       - name: Instalar Android NDK r17c
         id: setup-ndk
@@ -28,16 +28,14 @@ jobs:
       - name: Crear toolchains de Linux (ARM y ARM64)
         run: |
           NDK_PATH="${{ steps.setup-ndk.outputs.ndk-path }}"
-          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm --api 16 --install-dir $PWD/toolchain-arm
+          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm --api 18 --install-dir $PWD/toolchain-arm
           python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm64 --api 21 --install-dir $PWD/toolchain-arm64
 
       - name: Compilar herramientas auxiliares nativas (prec-build)
         run: |
           mkdir -p prec-build
-          make -j$(nproc) TARGET=mame OSD=sdl NOWERROR=1 \
-            CC="@gcc" LD="@g++" AR="@ar" \
-            obj/sdl/mame/build/file2str obj/sdl/mame/build/png2bdc obj/sdl/mame/build/verinfo || true
-          find obj -type f -executable -exec cp {} prec-build/ \;
+          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
+          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
           ls -la prec-build/
 
       - name: Compilar mame-native a .so (ARMv7 y ARM64)
