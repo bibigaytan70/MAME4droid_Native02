@@ -17,23 +17,36 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential unzip wget libstdc++6:i386 zlib1g:i386
+          sudo apt-get install -y build-essential unzip wget python3 libstdc++6:i386 zlib1g:i386
 
-      - name: Instalar Android NDK r15c
+      - name: Instalar Android NDK r17c
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r15c
+          ndk-version: r17c
 
-      - name: Configurar variables de entorno NDK
+      - name: Crear toolchains de Linux (ARM y ARM64)
         run: |
-          echo "NDK=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
-          echo "${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_PATH
+          NDK_PATH="${{ steps.setup-ndk.outputs.ndk-path }}"
+          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm --api 16 --install-dir $PWD/toolchain-arm
+          python3 $NDK_PATH/build/tools/make_standalone_toolchain.py --arch arm64 --api 21 --install-dir $PWD/toolchain-arm64
 
-      - name: Compilar mame-native a .so
+      - name: Compilar mame-native a .so (ARMv7 y ARM64)
         run: |
-          make -j$(nproc) TARGET=mame OSD=droid ARM64=1
-          make -j$(nproc) TARGET=mame OSD=droid
+          # Compilar para 32-bit (armeabi-v7a)
+          make -j$(nproc) TARGET=mame OSD=droid-ios \
+            CC="@$PWD/toolchain-arm/bin/arm-linux-androideabi-clang" \
+            LD="@$PWD/toolchain-arm/bin/arm-linux-androideabi-clang++" \
+            AR="@$PWD/toolchain-arm/bin/arm-linux-androideabi-ar"
+
+          # Limpiar objetos intermedios antes de compilar 64-bit
+          make clean TARGET=mame OSD=droid-ios
+
+          # Compilar para 64-bit (arm64-v8a)
+          make -j$(nproc) TARGET=mame OSD=droid-ios PTR64=1 \
+            CC="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang" \
+            LD="@$PWD/toolchain-arm64/bin/aarch64-linux-android-clang++" \
+            AR="@$PWD/toolchain-arm64/bin/aarch64-linux-android-ar"
 
       - name: Subir librerías .so compiladas
         uses: actions/upload-artifact@v4
