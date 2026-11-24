@@ -19,12 +19,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential unzip wget libstdc++6:i386 zlib1g:i386
 
-      - name: Descargar Android NDK r15c
+      - name: Instalar Android NDK r15c
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r15c
+
+      - name: Configurar variables de entorno NDK
         run: |
-          wget -q https://google.com
-          unzip -q android-ndk-r15c-linux-x86_64.zip
-          echo "NDK=$PWD/android-ndk-r15c" >> $GITHUB_ENV
-          echo "$PWD/android-ndk-r15c" >> $GITHUB_PATH
+          echo "NDK=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+          echo "${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_PATH
 
       - name: Compilar mame-native a .so
         run: |
