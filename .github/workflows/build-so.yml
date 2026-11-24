@@ -36,6 +36,7 @@ jobs:
         run: |
           mkdir -p prec-build
           gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
+          gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo || true
 
