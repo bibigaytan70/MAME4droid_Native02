@@ -15,13 +15,22 @@ jobs:
       - name: Instalar dependencias de compilación en Ubuntu
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential zlib1g-dev
+          sudo apt-get install -y build-essential zlib1g-dev python2.7
 
-      - name: Instalar Android NDK r16b
+      - name: Instalar Android NDK r17c
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r16b
+          ndk-version: r17c
           add-to-path: true
+
+      - name: Crear Standalone Toolchains en /C/Android/
+        run: |
+          sudo mkdir -p /C/Android
+          sudo chmod -R 777 /C/Android
+          python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
+            --arch arm --api 16 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm
+          python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
+            --arch arm64 --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm64
 
       - name: Compilar herramientas host en prec-build
         run: |
@@ -29,15 +38,15 @@ jobs:
           gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo || true
-          ls -la prec-build
 
-      - name: Compilar MAME4droid para Android (.so)
+      - name: Compilar MAME4droid ARMv7 (.so)
         run: |
           make -j$(nproc)
+          mkdir -p salida_so/armeabi-v7a
+          find . -maxdepth 3 -name "*.so" -exec cp {} salida_so/armeabi-v7a/ \;
 
       - name: Empaquetar y subir archivos .so
         uses: actions/upload-artifact@v4
         with:
           name: librerias-mame4droid-so
-          path: |
-            **/*.so
+          path: salida_so/**/*.so
