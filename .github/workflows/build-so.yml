@@ -1,0 +1,39 @@
+name: Compilar mame-native 0.139u1 (.so)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-native:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Descargar código fuente
+        uses: actions/checkout@v3
+
+      - name: Instalar dependencias de compilación
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential unzip wget libstdc++6:i386 zlib1g:i386
+
+      - name: Descargar Android NDK r15c
+        run: |
+          wget -q https://google.com
+          unzip -q android-ndk-r15c-linux-x86_64.zip
+          echo "NDK=$PWD/android-ndk-r15c" >> $GITHUB_ENV
+          echo "$PWD/android-ndk-r15c" >> $GITHUB_PATH
+
+      - name: Compilar mame-native a .so
+        run: |
+          # Compila usando el Makefile raíz para Android (arm64 y armv7)
+          make -j$(nproc) TARGET=mame OSD=droid ARM64=1
+          make -j$(nproc) TARGET=mame OSD=droid
+
+      - name: Subir librerías .so compiladas
+        uses: actions/upload-artifact@v3
+        with:
+          name: mame-native-so
+          path: |
+            **/*.so
