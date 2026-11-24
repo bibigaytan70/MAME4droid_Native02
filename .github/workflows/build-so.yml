@@ -28,7 +28,7 @@ jobs:
           sudo mkdir -p /C/Android
           sudo chmod -R 777 /C/Android
           python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
-            --arch arm --api 16 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm
+            --arch arm --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm
           python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
             --arch arm64 --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm64
 
