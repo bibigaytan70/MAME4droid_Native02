@@ -23,7 +23,7 @@ jobs:
           ndk-version: r17c
           add-to-path: true
 
-      - name: Crear Standalone Toolchains en /C/Android/
+      - name: Crear Standalone Toolchains en /C/Android/ (con alias .exe)
         run: |
           sudo mkdir -p /C/Android
           sudo chmod -R 777 /C/Android
@@ -31,6 +31,12 @@ jobs:
             --arch arm --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm
           python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
             --arch arm64 --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm64
+
+          for dir in /C/Android/toolchain-r17c-arm/bin /C/Android/toolchain-r17c-arm64/bin; do
+            for bin in "$dir"/*; do
+              ln -sf "$bin" "$bin.exe"
+            done
+          done
 
       - name: Compilar herramientas host en prec-build
         run: |
@@ -94,10 +100,6 @@ jobs:
             src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
-
-      - name: Corregir cabecera droidsync.h
-        run: |
-          cp -f src/osd/droid-ios/osdsync.h src/osd/droid-ios/droidsync.h
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
