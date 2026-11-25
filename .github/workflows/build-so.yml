@@ -39,15 +39,59 @@ jobs:
           gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
           gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
           gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
-          gcc -O2 -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/osd/droid-ios -Isrc/lib/util -Isrc/emu \
+
+          cat << 'EOF' > /tmp/osd_stub.c
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <sys/stat.h>
+          #include "osdcore.h"
+
+          file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 *filesize) {
+              const char *mode = (openflags & OPEN_FLAG_WRITE) ? ((openflags & OPEN_FLAG_CREATE) ? "wb+" : "rb+") : "rb";
+              FILE *f = fopen(path, mode);
+              if (!f) return FILERR_NOT_FOUND;
+              fseek(f, 0, SEEK_END);
+              *filesize = ftell(f);
+              fseek(f, 0, SEEK_SET);
+              *file = (osd_file *)f;
+              return FILERR_NONE;
+          }
+          file_error osd_read(osd_file *file, void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
+              FILE *f = (FILE *)file;
+              fseek(f, offset, SEEK_SET);
+              size_t r = fread(buffer, 1, length, f);
+              if (actual) *actual = (UINT32)r;
+              return FILERR_NONE;
+          }
+          file_error osd_write(osd_file *file, const void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
+              FILE *f = (FILE *)file;
+              fseek(f, offset, SEEK_SET);
+              size_t w = fwrite(buffer, 1, length, f);
+              if (actual) *actual = (UINT32)w;
+              return FILERR_NONE;
+          }
+          file_error osd_close(osd_file *file) {
+              if (file) fclose((FILE *)file);
+              return FILERR_NONE;
+          }
+          file_error osd_rmfile(const char *filename) {
+              return remove(filename) == 0 ? FILERR_NONE : FILERR_FAILURE;
+          }
+          void *osd_malloc(size_t size) { return malloc(size); }
+          void osd_free(void *ptr) { free(ptr); }
+          int osd_uchar_from_osdchar(UINT32 *uchar, const char *osdchar, size_t count) {
+              if (count == 0) return 0;
+              *uchar = (unsigned char)osdchar[0];
+              return 1;
+          }
+          EOF
+
+          gcc -O2 -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util -Isrc/emu \
             src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
             src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
-            src/lib/util/unicode.c src/lib/util/osdcore.c src/osd/droid-ios/osd_file.c \
-            -lz -lm -o prec-build/png2bdc || \
-          gcc -O2 -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/osd/sdl -Isrc/lib/util -Isrc/emu \
-            src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
-            src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
-            src/lib/util/unicode.c -lz -lm -o prec-build/png2bdc
+            src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
+            -lz -lm -o prec-build/png2bdc
           ls -la prec-build
 
       - name: Compilar MAME4droid ARMv7 (.so)
