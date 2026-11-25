@@ -95,10 +95,14 @@ jobs:
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
 
-      - name: Corregir rutas de cabeceras OSD (droidsync.h)
+      - name: Buscar o diagnosticar droidsync.h
         run: |
-          find . -iname "droidsync.h" -exec cp -n {} src/osd/droid-ios/droidsync.h \; || true
+          git clone --depth 1 https://github.com /tmp/mame_java || true
+          find /tmp/mame_java -iname "droidsync.h" -exec cp -v {} src/osd/droid-ios/droidsync.h \; || true
+          echo "=== Archivos en src/osd/droid-ios ==="
           ls -la src/osd/droid-ios/
+          echo "=== Contenido de src/osd/droid-ios/osdwork.c ==="
+          cat src/osd/droid-ios/osdwork.c
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
