@@ -34,9 +34,10 @@ jobs:
 
           for dir in /C/Android/toolchain-r17c-arm/bin /C/Android/toolchain-r17c-arm64/bin; do
             for bin in "$dir"/*; do
-              ln -sf "$bin" "$bin.exe"
+              [ -f "$bin" ] && ln -sf "$(basename "$bin")" "$bin.exe"
             done
           done
+          ls -la /C/Android/toolchain-r17c-arm/bin/*ar*
 
       - name: Compilar herramientas host en prec-build
         run: |
