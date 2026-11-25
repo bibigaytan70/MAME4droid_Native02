@@ -82,7 +82,7 @@ jobs:
           void osd_free(void *ptr) { free(ptr); }
           int osd_uchar_from_osdchar(UINT32 *uchar, const char *osdchar, size_t count) {
               if (count == 0) return 0;
-              *uchar = (unsigned char)osdchar[0];
+              *uchar = (unsigned char)osdchar;
               return 1;
           }
           void palette_ref(void *palette) {}
@@ -94,7 +94,11 @@ jobs:
             src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
-          ls -la prec-build
+
+      - name: Corregir rutas de cabeceras OSD (droidsync.h)
+        run: |
+          find . -iname "droidsync.h" -exec cp -n {} src/osd/droid-ios/droidsync.h \; || true
+          ls -la src/osd/droid-ios/
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
