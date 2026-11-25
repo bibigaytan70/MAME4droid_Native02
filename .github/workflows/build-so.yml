@@ -23,7 +23,7 @@ jobs:
           ndk-version: r17c
           add-to-path: true
 
-      - name: Crear Standalone Toolchains en /C/Android/ (con alias .exe)
+      - name: Crear Standalone Toolchains en /C/Android/
         run: |
           sudo mkdir -p /C/Android
           sudo chmod -R 777 /C/Android
@@ -34,10 +34,9 @@ jobs:
 
           for dir in /C/Android/toolchain-r17c-arm/bin /C/Android/toolchain-r17c-arm64/bin; do
             for bin in "$dir"/*; do
-              [ -f "$bin" ] && ln -sf "$(basename "$bin")" "$bin.exe"
+              cp -L "$bin" "$bin.exe"
             done
           done
-          ls -la /C/Android/toolchain-r17c-arm/bin/*ar*
 
       - name: Compilar herramientas host en prec-build
         run: |
@@ -104,7 +103,7 @@ jobs:
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
-          make -j$(nproc)
+          make AR=/C/Android/toolchain-r17c-arm/bin/arm-linux-androideabi-ar -j$(nproc)
           mkdir -p salida_so/armeabi-v7a
           find . -maxdepth 3 -name "*.so" -exec cp {} salida_so/armeabi-v7a/ \;
 
