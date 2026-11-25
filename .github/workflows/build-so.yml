@@ -85,6 +85,8 @@ jobs:
               *uchar = (unsigned char)osdchar[0];
               return 1;
           }
+          void palette_ref(void *palette) {}
+          void palette_deref(void *palette) {}
           EOF
 
           gcc -O2 -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util -Isrc/emu \
