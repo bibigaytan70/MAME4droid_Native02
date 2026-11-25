@@ -17,10 +17,10 @@
 #include "osdcore.h"
 #include "osinline.h"
 
-#include "droidsync.h"
-#include "droidos.h"
+#include "osdsync.h"
+#include "osdos.h"
 
-#include "eminline.h"
+#include "osinline.h"
 
 // Asegurar un límite máximo amplio si WORK_MAX_THREADS estaba limitado en cabeceras antiguas
 #if !defined(WORK_MAX_THREADS) || (WORK_MAX_THREADS < 16)
