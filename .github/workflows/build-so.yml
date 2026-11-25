@@ -82,7 +82,7 @@ jobs:
           void osd_free(void *ptr) { free(ptr); }
           int osd_uchar_from_osdchar(UINT32 *uchar, const char *osdchar, size_t count) {
               if (count == 0) return 0;
-              *uchar = (unsigned char)osdchar;
+              *uchar = (unsigned char)*osdchar;
               return 1;
           }
           void palette_ref(void *palette) {}
@@ -95,14 +95,9 @@ jobs:
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
 
-      - name: Buscar o diagnosticar droidsync.h
+      - name: Corregir cabecera droidsync.h
         run: |
-          git clone --depth 1 https://github.com /tmp/mame_java || true
-          find /tmp/mame_java -iname "droidsync.h" -exec cp -v {} src/osd/droid-ios/droidsync.h \; || true
-          echo "=== Archivos en src/osd/droid-ios ==="
-          ls -la src/osd/droid-ios/
-          echo "=== Contenido de src/osd/droid-ios/osdwork.c ==="
-          cat src/osd/droid-ios/osdwork.c
+          cp -f src/osd/droid-ios/osdsync.h src/osd/droid-ios/droidsync.h
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
