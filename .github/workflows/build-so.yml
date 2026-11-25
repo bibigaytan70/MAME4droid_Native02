@@ -38,7 +38,17 @@ jobs:
           gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
           gcc -O2 -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
           gcc -O2 -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
-          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo || true
+          gcc -O2 -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
+          gcc -O2 -DCRLF=2 -Isrc/osd -Isrc/osd/droid-ios -Isrc/lib/util \
+            src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
+            src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
+            src/lib/util/unicode.c src/lib/util/osdcore.c src/osd/droid-ios/osd_file.c \
+            -lz -lm -o prec-build/png2bdc || \
+          gcc -O2 -DCRLF=2 -Isrc/osd -Isrc/osd/sdl -Isrc/lib/util \
+            src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
+            src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
+            src/lib/util/unicode.c -lz -lm -o prec-build/png2bdc
+          ls -la prec-build
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
