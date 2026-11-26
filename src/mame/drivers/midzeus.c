@@ -13,7 +13,7 @@
 **************************************************************************/
 
 #include "emu.h"
-#include "midzeus.h"
+#include "includes/midzeus.h"
 #include "dcs.h"
 #include "cpu/adsp2100/adsp2100.h"
 #include "cpu/pic16c5x/pic16c5x.h"
