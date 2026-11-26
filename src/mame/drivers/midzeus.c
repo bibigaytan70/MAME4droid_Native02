@@ -1,4 +1,4 @@
-7/* license:BSD-3-Clause */
+/* license:BSD-3-Clause */
 /* copyright-holders:Aaron Giles */
 /*************************************************************************
 
@@ -17,7 +17,7 @@
 #include "dcs.h"
 #include "cpu/adsp2100/adsp2100.h"
 #include "cpu/pic16c5x/pic16c5x.h"
-#include "cpu/tms320c3x/tms320c3x.h"
+#include "cpu/tms32031/tms32031.h"
 #include "machine/ibm21s850.h"
 #include "machine/nvram.h"
 #include "machine/tsb12lv01a.h"
