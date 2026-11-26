@@ -1,4 +1,4 @@
-/* license:BSD-3-Clause */
+7/* license:BSD-3-Clause */
 /* copyright-holders:Aaron Giles */
 /*************************************************************************
 
@@ -23,7 +23,7 @@
 #include "machine/tsb12lv01a.h"
 #include "video/zeus2.h"
 #include "speaker.h"
-#include "crusnexo.lh"
+#include "layout/crusnexo.lay"
 
 #include <string.h>
 #include <stdint.h>
