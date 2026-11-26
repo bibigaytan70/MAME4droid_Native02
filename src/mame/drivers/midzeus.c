@@ -18,7 +18,6 @@
 #include "cpu/adsp2100/adsp2100.h"
 #include "cpu/pic16c5x/pic16c5x.h"
 #include "cpu/tms32031/tms32031.h"
-#include "speaker.h"
 #include "layout/crusnexo.lay"
 
 #include "cpu/tms34010/tms34010.h"
