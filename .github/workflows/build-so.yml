@@ -35,10 +35,10 @@ jobs:
       - name: Compilar herramientas host en prec-build
         run: |
           mkdir -p prec-build
-          gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
-          gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
-          gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
-          gcc -O2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
 
           cat << 'EOF' > /tmp/osd_stub.c
           #include <stdio.h>
@@ -64,7 +64,6 @@ jobs:
               if (fseek(f, (long)offset, SEEK_SET) != 0) return FILERR_FAILURE;
               size_t r = fread(buffer, 1, length, f);
               if (actual) *actual = (UINT32)r;
-              if (r == 0 && feof(f)) return FILERR_FAILURE;
               return FILERR_NONE;
           }
           file_error osd_write(osd_file *file, const void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
@@ -92,7 +91,7 @@ jobs:
           void palette_deref(void *palette) {}
           EOF
 
-          gcc -O2 -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util -Isrc/emu \
+          gcc -O2 -DLSB_FIRST -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util -Isrc/emu \
             src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
             src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
