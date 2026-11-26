@@ -32,8 +32,6 @@ jobs:
           python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
             --arch arm64 --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm64
 
-          ls -la /C/Android/toolchain-r17c-arm/bin/*ar*
-
       - name: Compilar herramientas host en prec-build
         run: |
           mkdir -p prec-build
@@ -97,10 +95,13 @@ jobs:
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
 
+      - name: Asegurar rutas de cabeceras de audio/includes
+        run: |
+          find src/mame -iname "dcs.h" -exec cp -n {} src/mame/drivers/dcs.h \; || true
+
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
           ARM_AR=$(find /C/Android/toolchain-r17c-arm/bin -name "*-ar" | head -n 1)
-          echo "Usando archivador: $ARM_AR"
           make AR="$ARM_AR" -j$(nproc)
           mkdir -p salida_so/armeabi-v7a
           find . -maxdepth 3 -name "*.so" -exec cp {} salida_so/armeabi-v7a/ \;
