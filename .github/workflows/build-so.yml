@@ -48,28 +48,31 @@ jobs:
           #include "osdcore.h"
 
           file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 *filesize) {
-              const char *mode = (openflags & OPEN_FLAG_WRITE) ? ((openflags & OPEN_FLAG_CREATE) ? "wb+" : "rb+") : "rb";
+              const char *mode = "rb";
+              if (openflags & OPEN_FLAG_CREATE) mode = "wb+";
+              else if (openflags & OPEN_FLAG_WRITE) mode = "rb+";
               FILE *f = fopen(path, mode);
               if (!f) return FILERR_NOT_FOUND;
               fseek(f, 0, SEEK_END);
-              *filesize = ftell(f);
+              *filesize = (UINT64)ftell(f);
               fseek(f, 0, SEEK_SET);
               *file = (osd_file *)f;
               return FILERR_NONE;
           }
           file_error osd_read(osd_file *file, void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
               FILE *f = (FILE *)file;
-              fseek(f, offset, SEEK_SET);
+              if (fseek(f, (long)offset, SEEK_SET) != 0) return FILERR_FAILURE;
               size_t r = fread(buffer, 1, length, f);
               if (actual) *actual = (UINT32)r;
+              if (r == 0 && feof(f)) return FILERR_FAILURE;
               return FILERR_NONE;
           }
           file_error osd_write(osd_file *file, const void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
               FILE *f = (FILE *)file;
-              fseek(f, offset, SEEK_SET);
+              if (fseek(f, (long)offset, SEEK_SET) != 0) return FILERR_FAILURE;
               size_t w = fwrite(buffer, 1, length, f);
               if (actual) *actual = (UINT32)w;
-              return FILERR_NONE;
+              return (w == length) ? FILERR_NONE : FILERR_FAILURE;
           }
           file_error osd_close(osd_file *file) {
               if (file) fclose((FILE *)file);
@@ -95,9 +98,11 @@ jobs:
             src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
             -lz -lm -o prec-build/png2bdc
 
-      - name: Asegurar rutas de cabeceras de audio/includes
+      - name: Asegurar rutas de cabeceras
         run: |
           find src/mame -iname "dcs.h" -exec cp -n {} src/mame/drivers/dcs.h \; || true
+          mkdir -p src/emu/cpu/tms320c3x
+          cp -n src/emu/cpu/tms32031/tms32031.h src/emu/cpu/tms320c3x/tms320c3x.h || true
 
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
