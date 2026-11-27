@@ -32,14 +32,14 @@ jobs:
           python3 $ANDROID_NDK_HOME/build/tools/make_standalone_toolchain.py \
             --arch arm64 --api 21 --stl libc++ --install-dir /C/Android/toolchain-r17c-arm64
 
-          # Asegurar que crtbegin_so.o, crtend_so.o y librerías del API 21 estén accesibles en sysroot/usr/lib
-          for tc in /C/Android/toolchain-r17c-arm /C/Android/toolchain-r17c-arm64; do
-            find "$tc/sysroot/usr/lib" -path "*/21/*" -type f -exec cp -n {} "$tc/sysroot/usr/lib/" \; || true
-            find "$tc" -name "crtbegin_so.o" -exec cp -n {} "$tc/sysroot/usr/lib/" \; || true
-            find "$tc" -name "crtend_so.o" -exec cp -n {} "$tc/sysroot/usr/lib/" \; || true
-            find "$tc" -name "libunwind.a" -exec cp -n {} "$tc/sysroot/usr/lib/" \; || true
-            find "$tc" -name "libgcc.a" -exec cp -n {} "$tc/sysroot/usr/lib/" \; || true
-          done
+          # Copiar solo librerías de la arquitectura destino (evitando mezclar x86_64)
+          cp -rn /C/Android/toolchain-r17c-arm/sysroot/usr/lib/arm-linux-androideabi/21/* /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
+          find /C/Android/toolchain-r17c-arm -path "*arm*" -name "libunwind.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
+          find /C/Android/toolchain-r17c-arm -path "*arm*" -name "libgcc.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
+
+          cp -rn /C/Android/toolchain-r17c-arm64/sysroot/usr/lib/aarch64-linux-android/21/* /C/Android/toolchain-r17c-arm64/sysroot/usr/lib/ || true
+          find /C/Android/toolchain-r17c-arm64 -path "*aarch64*" -name "libunwind.a" -exec cp -f {} /C/Android/toolchain-r17c-arm64/sysroot/usr/lib/ \; || true
+          find /C/Android/toolchain-r17c-arm64 -path "*aarch64*" -name "libgcc.a" -exec cp -f {} /C/Android/toolchain-r17c-arm64/sysroot/usr/lib/ \; || true
 
       - name: Compilar herramientas host en prec-build
         run: |
@@ -115,7 +115,7 @@ jobs:
       - name: Compilar MAME4droid ARMv7 (.so)
         run: |
           ARM_AR=$(find /C/Android/toolchain-r17c-arm/bin -name "*-ar" | head -n 1)
-          make AR="$ARM_AR" LDFLAGS="-L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lc++ -lm -ldl -lc" -j$(nproc)
+          make AR="$ARM_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lc++ -lm -ldl -lc" -j$(nproc)
           mkdir -p salida_so/armeabi-v7a
           find . -maxdepth 3 -name "*.so" -exec cp {} salida_so/armeabi-v7a/ \;
           ls -lh salida_so/armeabi-v7a/
