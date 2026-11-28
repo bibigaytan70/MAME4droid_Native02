@@ -141,9 +141,11 @@ jobs:
 
       - name: Compilar MAME4droid ARM64 (arm64-v8a)
         run: |
-          ARM64_AR=/C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar
-          ARM64_LIB=/C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/21
-          make AARMV7= AARMV8=1 PTR64=1 AR="$ARM64_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L$ARM64_LIB -llog -lOpenSLES -lc++ -lm -ldl -lc" -j$(nproc)
+          ARM64_BIN=/C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/bin
+          ARM64_SYS=/C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/sysroot
+          make AARMV7= AARMV8=1 PTR64=1 \
+            AR="$ARM64_BIN/aarch64-linux-android-ar" \
+            LDFLAGS="--target=aarch64-linux-android21 --sysroot=$ARM64_SYS -fuse-ld=lld -shared -Wl,--allow-multiple-definition -L$ARM64_SYS/usr/lib/aarch64-linux-android/21 -L$ARM64_SYS/usr/lib/aarch64-linux-android -llog -lOpenSLES -lc++_shared -lc++ -lm -ldl -lc" -j$(nproc)
           mkdir -p salida_so/arm64-v8a
           find . -maxdepth 3 \( -name "*.so" -o -name "mame" -o -name "mame64" \) -exec cp {} salida_so/arm64-v8a/ \;
           ls -lh salida_so/arm64-v8a/
