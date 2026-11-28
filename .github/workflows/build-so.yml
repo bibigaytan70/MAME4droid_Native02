@@ -43,8 +43,10 @@ jobs:
             --arch arm --api 18 --stl gnustl --install-dir /C/Android/toolchain-r17c-arm
 
           cp -rn /C/Android/toolchain-r17c-arm/sysroot/usr/lib/arm-linux-androideabi/18/* /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
-          find /C/Android/toolchain-r17c-arm -path "*armv7-a*" -name "*.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
-          find /C/Android/toolchain-r17c-arm -name "libgnustl_static.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
+          cp -f "${{ steps.ndk17.outputs.ndk-path }}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libgnustl_static.a" \
+                /C/Android/toolchain-r17c-arm/sysroot/usr/lib/
+          cp -f "${{ steps.ndk17.outputs.ndk-path }}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libsupc++.a" \
+                /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
 
           # 2. Toolchain ARM64 (r21e con puente linux-x86_64 -> windows-x86_64)
           ln -sfn "${{ steps.ndk21.outputs.ndk-path }}" /C/Android/android-ndk-r21e
@@ -128,7 +130,7 @@ jobs:
       - name: Compilar MAME4droid ARMv7 (armeabi-v7a)
         run: |
           ARM_AR=$(find /C/Android/toolchain-r17c-arm/bin -name "*-ar" | head -n 1)
-          make AARMV7=1 AARMV8= AR="$ARM_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lgnustl_static -lm -ldl -lc" -j$(nproc)
+          make AARMV7=1 AARMV8= AR="$ARM_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lgnustl_static -lsupc++ -lm -ldl -lc" -j$(nproc)
           mkdir -p salida_so/armeabi-v7a
           find . -maxdepth 3 \( -name "*.so" -o -name "mame" \) -exec cp {} salida_so/armeabi-v7a/ \;
           ls -lh salida_so/armeabi-v7a/
