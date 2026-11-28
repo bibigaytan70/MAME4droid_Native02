@@ -127,7 +127,7 @@ jobs:
           mkdir -p src/emu/cpu/tms320c3x
           cp -n src/emu/cpu/tms32031/tms32031.h src/emu/cpu/tms320c3x/tms320c3x.h || true
 
-            - name: Compilar MAME4droid ARMv7 (armeabi-v7a)
+      - name: Compilar MAME4droid ARMv7 (armeabi-v7a)
         run: |
           ARM_AR=$(find /C/Android/toolchain-r17c-arm/bin -name "*-ar" | head -n 1)
           make AARMV7=1 AARMV8= AR="$ARM_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lgnustl_static -lsupc++ -lm -ldl -lc" -j$(nproc)
