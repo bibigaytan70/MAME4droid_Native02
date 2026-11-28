@@ -1,4 +1,133 @@
-      - name: Compilar MAME4droid ARMv7 (armeabi-v7a)
+name: Compilar MAME4droid Native (.so ARMv7 + ARM64)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: Instalar dependencias de compilación en Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential zlib1g-dev libncurses6
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libncurses.so.6 /usr/lib/x86_64-linux-gnu/libncurses.so.5
+
+      - name: Instalar Android NDK r21e (para ARM64)
+        id: ndk21
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r21e
+          add-to-path: false
+
+      - name: Instalar Android NDK r17c (para ARMv7)
+        id: ndk17
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r17c
+          add-to-path: true
+
+      - name: Configurar Toolchains en /C/Android/ (ARMv7 r17c + ARM64 r21e)
+        run: |
+          sudo mkdir -p /C/Android
+          sudo chmod -R 777 /C/Android
+
+          # 1. Toolchain ARMv7 (r17c con API 18 y gnustl)
+          python3 ${{ steps.ndk17.outputs.ndk-path }}/build/tools/make_standalone_toolchain.py \
+            --arch arm --api 18 --stl gnustl --install-dir /C/Android/toolchain-r17c-arm
+
+          cp -rn /C/Android/toolchain-r17c-arm/sysroot/usr/lib/arm-linux-androideabi/18/* /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
+          cp -f "${{ steps.ndk17.outputs.ndk-path }}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libgnustl_static.a" \
+                /C/Android/toolchain-r17c-arm/sysroot/usr/lib/
+          cp -f "${{ steps.ndk17.outputs.ndk-path }}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libsupc++.a" \
+                /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
+
+          # 2. Toolchain ARM64 (r21e con puente linux-x86_64 -> windows-x86_64)
+          ln -sfn "${{ steps.ndk21.outputs.ndk-path }}" /C/Android/android-ndk-r21e
+          ln -sfn /C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64 \
+                  /C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/windows-x86_64
+          for bin in /C/Android/android-ndk-r21e/toolchains/llvm/prebuilt/linux-x86_64/bin/*; do
+            [ -f "$bin" ] && ln -sf "$(basename "$bin")" "$bin.exe"
+          done
+
+      - name: Compilar herramientas host en prec-build
+        run: |
+          mkdir -p prec-build
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/m68000/m68kmake.c -o prec-build/m68kmake
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/emu/cpu/tms57002/tmsmake.c -o prec-build/tmsmake
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/file2str.c -o prec-build/file2str
+          gcc -O2 -DLSB_FIRST -DINLINE="static inline" -Isrc/osd -Isrc/lib/util src/build/verinfo.c -o prec-build/verinfo
+
+          cat << 'EOF' > /tmp/osd_stub.c
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <sys/stat.h>
+          #include "osdcore.h"
+
+          file_error osd_open(const char *path, UINT32 openflags, osd_file **file, UINT64 *filesize) {
+              const char *mode = "rb";
+              if (openflags & OPEN_FLAG_CREATE) mode = "wb+";
+              else if (openflags & OPEN_FLAG_WRITE) mode = "rb+";
+              FILE *f = fopen(path, mode);
+              if (!f) return FILERR_NOT_FOUND;
+              fseek(f, 0, SEEK_END);
+              *filesize = (UINT64)ftell(f);
+              fseek(f, 0, SEEK_SET);
+              *file = (osd_file *)f;
+              return FILERR_NONE;
+          }
+          file_error osd_read(osd_file *file, void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
+              FILE *f = (FILE *)file;
+              if (fseek(f, (long)offset, SEEK_SET) != 0) return FILERR_FAILURE;
+              size_t r = fread(buffer, 1, length, f);
+              if (actual) *actual = (UINT32)r;
+              return FILERR_NONE;
+          }
+          file_error osd_write(osd_file *file, const void *buffer, UINT64 offset, UINT32 length, UINT32 *actual) {
+              FILE *f = (FILE *)file;
+              if (fseek(f, (long)offset, SEEK_SET) != 0) return FILERR_FAILURE;
+              size_t w = fwrite(buffer, 1, length, f);
+              if (actual) *actual = (UINT32)w;
+              return (w == length) ? FILERR_NONE : FILERR_FAILURE;
+          }
+          file_error osd_close(osd_file *file) {
+              if (file) fclose((FILE *)file);
+              return FILERR_NONE;
+          }
+          file_error osd_rmfile(const char *filename) {
+              return remove(filename) == 0 ? FILERR_NONE : FILERR_FAILURE;
+          }
+          void *osd_malloc(size_t size) { return malloc(size); }
+          void osd_free(void *ptr) { free(ptr); }
+          int osd_uchar_from_osdchar(UINT32 *uchar, const char *osdchar, size_t count) {
+              if (count == 0) return 0;
+              *uchar = (unsigned char)*osdchar;
+              return 1;
+          }
+          void palette_ref(void *palette) {}
+          void palette_deref(void *palette) {}
+          EOF
+
+          gcc -O2 -DLSB_FIRST -DCRLF=2 -DINLINE="static inline" -Isrc/osd -Isrc/lib/util -Isrc/emu \
+            src/build/png2bdc.c src/lib/util/png.c src/lib/util/unzip.c \
+            src/lib/util/astring.c src/lib/util/corefile.c src/lib/util/corestr.c \
+            src/lib/util/unicode.c src/lib/util/bitmap.c /tmp/osd_stub.c \
+            -lz -lm -o prec-build/png2bdc
+
+      - name: Asegurar rutas de cabeceras
+        run: |
+          find src/mame -iname "dcs.h" -exec cp -n {} src/mame/drivers/dcs.h \; || true
+          mkdir -p src/emu/cpu/tms320c3x
+          cp -n src/emu/cpu/tms32031/tms32031.h src/emu/cpu/tms320c3x/tms320c3x.h || true
+
+            - name: Compilar MAME4droid ARMv7 (armeabi-v7a)
         run: |
           ARM_AR=$(find /C/Android/toolchain-r17c-arm/bin -name "*-ar" | head -n 1)
           make AARMV7=1 AARMV8= AR="$ARM_AR" LDFLAGS="-shared -Wl,--allow-multiple-definition -L/C/Android/toolchain-r17c-arm/sysroot/usr/lib -llog -lOpenSLES -lgnustl_static -lsupc++ -lm -ldl -lc" -j$(nproc)
