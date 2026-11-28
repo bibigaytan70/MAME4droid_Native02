@@ -308,7 +308,7 @@ endif
 # profiler defaults to on for DEBUG builds
 ifdef DEBUG
 ifndef PROFILER
-PROFILER = 1
+PROFILER = 0
 endif
 endif
 
