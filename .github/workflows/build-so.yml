@@ -38,14 +38,13 @@ jobs:
           sudo mkdir -p /C/Android
           sudo chmod -R 777 /C/Android
 
-          # 1. Toolchain ARMv7 (r17c con API 18 y gnustl, igual que el makefile original)
+          # 1. Toolchain ARMv7 (r17c con API 18 y gnustl)
           python3 ${{ steps.ndk17.outputs.ndk-path }}/build/tools/make_standalone_toolchain.py \
             --arch arm --api 18 --stl gnustl --install-dir /C/Android/toolchain-r17c-arm
 
           cp -rn /C/Android/toolchain-r17c-arm/sysroot/usr/lib/arm-linux-androideabi/18/* /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ || true
-          find /C/Android/toolchain-r17c-arm -path "*arm-linux-androideabi*" -name "libunwind.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
-          find /C/Android/toolchain-r17c-arm -path "*arm-linux-androideabi*" -name "libgcc.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
-          find /C/Android/toolchain-r17c-arm -path "*arm-linux-androideabi*" -name "libgnustl_static.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
+          find /C/Android/toolchain-r17c-arm -path "*armv7-a*" -name "*.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
+          find /C/Android/toolchain-r17c-arm -name "libgnustl_static.a" -exec cp -f {} /C/Android/toolchain-r17c-arm/sysroot/usr/lib/ \; || true
 
           # 2. Toolchain ARM64 (r21e con puente linux-x86_64 -> windows-x86_64)
           ln -sfn "${{ steps.ndk21.outputs.ndk-path }}" /C/Android/android-ndk-r21e
